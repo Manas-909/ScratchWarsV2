@@ -102,6 +102,54 @@ class Planet(pygame.sprite.Sprite):
     def draw_planet(self):
         window.blit(self.frames[self.current_frame], (self.x, self.y))
 
+class Asteroid(pygame.sprite.Sprite):
+    def __init__(self, x, y, x2, y2, width, height):
+        super().__init__()
+        self.rect = pygame.Rect(x, y, width, height)
+        self.x = x
+        self.y = y
+        self.x2 = x2
+        self.y2 = y2
+        self.width = width
+        self.height = height
+
+        self.ast_speed = 4
+        self.ast_sprite = pygame.image.load("assets/asteroid.png").convert_alpha()
+        self.frame_width = 100
+        self.frame_height = 100
+        self.frames = []
+
+        self.current_frame = 0
+        self.last_frame_time = pygame.time.get_ticks()
+        self.animation_speed = 100
+
+        for i in range(50):
+            frame = self.ast_sprite.subsurface((i * self.frame_width, 0, self.frame_width, self.frame_height))
+            frame = pygame.transform.scale(frame, (self.width, self.height))
+            self.frames.append(frame)
+
+    def update_ast(self):
+        current_time = pygame.time.get_ticks()
+
+        if self.x2 - self.x < 0:
+            self.x -= self.ast_speed
+        elif self.x2 - self.x > 0:
+            self.x += self.ast_speed
+
+        if self.y2 - self.y < 0:
+            self.y -= self.ast_speed
+        elif self.y2 - self.y > 0:
+            self.y += self.ast_speed
+
+
+        if current_time - self.last_frame_time >= self.animation_speed:
+            self.current_frame = (self.current_frame + 1) % 50
+            self.last_frame_time = current_time
+
+    def draw_ast(self):
+        window.blit(self.frames[self.current_frame], (self.x, self.y))
+
+
 def make_background():
     image = pygame.image.load("assets/space_background.png").convert()
 
@@ -130,6 +178,7 @@ def main(window):
     planet = Planet(800, 200, 150, 150)
     background = make_background()
     player = Player(70, 250, 50, 50)
+    asteroid = Asteroid(800, 0, 0, 600, 100, 100)
 
     run = True
     while run:
@@ -143,8 +192,10 @@ def main(window):
         draw(window, background)
         player.draw_player()
         planet.draw_planet()
+        asteroid.draw_ast()
 
         planet.update_planet()
+        asteroid.update_ast()
         pygame.display.update()
 
     pygame.quit()
