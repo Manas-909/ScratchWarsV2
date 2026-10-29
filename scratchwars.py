@@ -25,11 +25,47 @@ class Player(pygame.sprite.Sprite):
 
         self.x_speed = 0
         self.y_speed = 0
+        self.accleration = 0.2
+        self.max_speed = 5
+        self.friction = 0.2
+
+    def move_player(self):
+        keys = pygame.key.get_pressed()
+
+        if keys[pygame.K_a]:
+            self.x_speed -= self.accleration
+        if keys[pygame.K_d]:
+            self.x_speed += self.accleration
+        if keys[pygame.K_w]:
+            self.y_speed -= self.accleration
+        if keys[pygame.K_s]:
+            self.y_speed += self.accleration
+
+        if not keys[pygame.K_a] and not keys[pygame.K_d]:
+            if self.x_speed > 0:
+                self.x_speed = max(0, self.x_speed - self.friction)
+            elif self.x_speed < 0:
+                self.x_speed = min(0, self.x_speed + self.friction)
+
+        if not keys[pygame.K_w] and not keys[pygame.K_s]:
+            if self.y_speed > 0:
+                self.y_speed = max(0, self.y_speed - self.friction)
+            elif self.y_speed < 0:
+                self.y_speed = min(0, self.y_speed + self.friction)
+
+        self.x_speed = max(-self.max_speed, min(self.x_speed, self.max_speed))
+        self.y_speed = max(-self.max_speed, min(self.y_speed, self.max_speed))
+
+        self.x += self.x_speed
+        self.y += self.y_speed
+
+        self.rect.topleft = round(self.x), round(self.y)
 
     def draw_player(self):
         player_sprite = pygame.image.load("assets/player_ship.png")
         player_sprite = pygame.transform.rotate(player_sprite, 90.0)
         player_sprite = pygame.transform.scale(player_sprite, (self.width, self.height))
+        self.move_player()
         window.blit(player_sprite, (self.x, self.y))
 
 class Planet(pygame.sprite.Sprite):
@@ -93,12 +129,11 @@ def main(window):
     clock = pygame.time.Clock()
     planet = Planet(800, 200, 150, 150)
     background = make_background()
+    player = Player(70, 250, 50, 50)
 
     run = True
     while run:
         clock.tick(FPS)
-
-        player = Player(70, 250, 50, 50)
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
