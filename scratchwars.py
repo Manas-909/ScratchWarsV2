@@ -16,6 +16,7 @@ window = pygame.display.set_mode((WIDTH, HEIGHT))
 class Player(pygame.sprite.Sprite):
 
     def __init__(self, x, y, height, width):
+        super().__init__()
         self.rect = pygame.Rect(x, y, width, height)
         self.x = x
         self.y = y
@@ -31,16 +32,50 @@ class Player(pygame.sprite.Sprite):
         player_sprite = pygame.transform.scale(player_sprite, (self.width, self.height))
         window.blit(player_sprite, (self.x, self.y))
 
+class Planet(pygame.sprite.Sprite):
+
+    def __init__(self, x, y, width, height):
+        super().__init__()
+        self.rect = pygame.Rect(x, y, width, height)
+        self.x = x
+        self.y = y
+        self.height = height
+        self.width = width
+
+        self.planet_sprite = pygame.image.load("assets/planet.png").convert_alpha()
+        self.frame_width = 100
+        self.frame_height = 100
+        self.frames = []
+
+        self.current_frame = 0
+        self.last_frame_time = pygame.time.get_ticks()
+        self.animation_speed = 100
+
+        for i in range(50):
+            frame = self.planet_sprite.subsurface((i * self.frame_width, 0, self.frame_width, self.frame_height))
+            frame = pygame.transform.scale(frame, (self.width, self.height))
+            self.frames.append(frame)
+
+    def update_planet(self):
+        current_time = pygame.time.get_ticks()
+
+        if current_time - self.last_frame_time >= self.animation_speed:
+            self.current_frame = (self.current_frame + 1) % 50
+            self.last_frame_time = current_time
+
+    def draw_planet(self):
+        window.blit(self.frames[self.current_frame], (self.x, self.y))
 
 def make_background():
     image = pygame.image.load("assets/space_background.png").convert()
 
     image = pygame.transform.scale(image, (WIDTH, HEIGHT))
     flipped_image = pygame.transform.flip(image, True, False)
+    number_of_bg = 2
 
     tiles = []
 
-    for i in range(2):
+    for i in range(number_of_bg):
         pos = (WIDTH * i, 0)
 
         if i % 2 == 0:
@@ -56,13 +91,14 @@ def draw(window, background):
 
 def main(window):
     clock = pygame.time.Clock()
+    planet = Planet(800, 200, 150, 150)
+    background = make_background()
 
     run = True
     while run:
         clock.tick(FPS)
-        background = make_background()
 
-        player = Player(100, 100, 100, 100)
+        player = Player(70, 250, 50, 50)
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -71,7 +107,9 @@ def main(window):
 
         draw(window, background)
         player.draw_player()
+        planet.draw_planet()
 
+        planet.update_planet()
         pygame.display.update()
 
     pygame.quit()
