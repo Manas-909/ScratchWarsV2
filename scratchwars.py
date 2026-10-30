@@ -13,9 +13,9 @@ FPS = 60
 window = pygame.display.set_mode((WIDTH, HEIGHT))
 
 class Enemyships(pygame.sprite.Sprite):
-    def __init__(self, x, y, width, height, speed, name, player):
+    def __init__(self, x, y, width, height, speed, name, player, trigger):
         super().__init__()
-        self.rect = pygame.Rect(x, y, height, width)
+        self.rect = pygame.Rect(x, y, width, height)
         self.x = x
         self.y = y
         self.width = width
@@ -23,23 +23,47 @@ class Enemyships(pygame.sprite.Sprite):
         self.speed = speed
         self.player = player
         self.name = name
+        self.trigger = trigger
+        self.passed = 0
+        self.last_vel = None
+        self.current_pos_y = 0
+        self.current_pos_x = 0
 
     def move_eship(self):
-        if self.player.x - self.x < 0:
-            self.x -= self.speed
-        elif self.player.x - self.x > 0:
-            self.x += self.speed
+        if self.player.x > self.trigger and self.passed < 2:
+            self.passed += 1 
 
-        if self.player.y - self.y < 0:
-            self.y -= self.speed
-        elif self.player.y - self.y > 0:
-            self.y += self.speed
+        if self.passed == 1:
+            self.current_pos_x = self.player.x
+            self.current_pos_y = self.player.y
 
-    def draw_eship(self, scroll_x):
+        if self.passed != 0:
+            if self.current_pos_y - self.y < 0:
+                self.last_vel = "w"
+                self.y -= min(self.speed, abs(self.current_pos_y - self.y)) 
+            elif self.current_pos_y - self.y > 0:
+                self.last_vel = "s"
+                self.y += min(self.speed, abs(self.current_pos_y - self.y))
+
+            if self.current_pos_x - self.x < 0 and self.current_pos_y == self.y:
+                self.last_vel = "a"
+                self.x -= min(self.speed, abs(self.current_pos_x - self.x))               
+            elif self.current_pos_x - self.x > 0 and self.current_pos_y == self.y:
+                self.last_vel = "d"
+                self.x += min(self.speed, abs(self.current_pos_x - self.x))
+
+    def draw_eship(self):
         Hship_sprite = pygame.image.load(join("assets", self.name))
         Hship_sprite = pygame.transform.scale(Hship_sprite, (self.width, self.height))
-        Hship_sprite = pygame.transform.rotate(Hship_sprite, -90.0)
-        window.blit(Hship_sprite, (self.x - scroll_x, self.y))
+        Hship_sprite = pygame.transform.rotate(Hship_sprite, 90.0)
+        if self.last_vel == "w":
+            Hship_sprite = pygame.transform.rotate(Hship_sprite, 90.0)
+        elif self.last_vel == "a":
+            Hship_sprite = pygame.transform.rotate(Hship_sprite, 180.0)
+        elif self.last_vel == "s":
+            Hship_sprite = pygame.transform.rotate(Hship_sprite, -90.0)
+
+        window.blit(Hship_sprite, (self.x, self.y))
 
 class Player(pygame.sprite.Sprite):
 
@@ -50,7 +74,7 @@ class Player(pygame.sprite.Sprite):
         self.y = y
         self.width = width
         self.height = height
-        self.time_limit = 20000
+        self.time_limit = 15000
         self.start_time = None
         self.approach_planet = False
 
@@ -110,8 +134,6 @@ class Player(pygame.sprite.Sprite):
             player_sprite = pygame.transform.rotate(player_sprite, 90.0)
         elif keys[pygame.K_a]:
             player_sprite = pygame.transform.rotate(player_sprite, 180.0)
-        elif keys[pygame.K_d]:
-            player_sprite = pygame.transform.rotate(player_sprite, 0.0)
         elif keys[pygame.K_s]:
             player_sprite = pygame.transform.rotate(player_sprite, 270.0)
 
@@ -233,8 +255,14 @@ def main(window):
     asteroid1 = Asteroid(800, -100, 0, 600, 100, 100, player, 500)
     asteroid2 = Asteroid(200, 680, 900, -100, 100, 100, player, 700)
     asteroid3 = Asteroid(-100, 500, 1200, -100, 100, 100, player, 1000)
+    asteroid4 = Asteroid(-100, 50, 1100, 50, 100, 100, player, 1500)
+    asteroid5 = Asteroid(-100, 250, 1100, 250, 100, 100, player, 1500)
+    asteroid6 = Asteroid(-100, 450, 1100, 450, 100, 100, player, 1500)
+    asteroid7 = Asteroid(-100, -100, 1100, 650, 100, 100, player, 2000)
+    asteroid8 = Asteroid(-100, 750, 1100, -350, 100, 100, player, 2000)
     planet = Planet(800, 200, 150, 150, player)
-    enemyship1 = Enemyships(900, 700, 60, 60, 2, "enemyBlack1.png", player)
+    enemyship1 = Enemyships(600, 700, 60, 60, 5, "enemyBlack1.png", player, 105)
+    enemyship2 = Enemyships(600, -100, 60, 60, 5, "enemyBlack2.png", player, 1405)
     scroll_x = 0
 
     run = True
@@ -247,16 +275,31 @@ def main(window):
                 break
 
         player.move_player()
-        enemyship1.move_eship()
+
+        if not (enemyship1.current_pos_x == enemyship1.x and enemyship1.current_pos_y == enemyship1.y):
+            enemyship1.move_eship()
+        if not (enemyship2.current_pos_x == enemyship2.x and enemyship2.current_pos_y == enemyship2.y):
+            enemyship2.move_eship()
+
         if not player.approach_planet:
             scroll_x = max(0, player.x - 500)
 
         draw(window, background, scroll_x)
         player.draw_player(scroll_x)
-        enemyship1.draw_eship(scroll_x)
+
+        if not (enemyship1.current_pos_x == enemyship1.x and enemyship1.current_pos_y == enemyship1.y):
+            enemyship1.draw_eship()
+        if not (enemyship2.current_pos_x == enemyship2.x and enemyship2.current_pos_y == enemyship2.y):
+            enemyship2.draw_eship()
+        
         asteroid1.draw_ast()
         asteroid2.draw_ast()
         asteroid3.draw_ast()
+        asteroid4.draw_ast()
+        asteroid5.draw_ast()
+        asteroid6.draw_ast()
+        asteroid7.draw_ast()
+        asteroid8.draw_ast()
         planet.draw_planet()
         
 
@@ -264,6 +307,11 @@ def main(window):
         asteroid1.update_ast()
         asteroid2.update_ast()
         asteroid3.update_ast()
+        asteroid4.update_ast()
+        asteroid5.update_ast()
+        asteroid6.update_ast()
+        asteroid7.update_ast()
+        asteroid8.update_ast()
         pygame.display.update()
 
     pygame.quit()
