@@ -26,6 +26,9 @@ class Player(pygame.sprite.Sprite):
         self.y = y
         self.width = width
         self.height = height
+        self.time_limit = 5000
+        self.start_time = None
+        self.approach_planet = False
 
         self.x_speed = 0
         self.y_speed = 0
@@ -64,12 +67,19 @@ class Player(pygame.sprite.Sprite):
         self.y += self.y_speed
 
         self.rect.topleft = round(self.x), round(self.y)
+        current_time = pygame.time.get_ticks()
+
+        if self.x_speed != 0 and self.start_time is None:
+            self.start_time = current_time
+        
+        if self.start_time is not None:
+            if current_time - self.start_time >= self.time_limit and self.x_speed > 0:
+                self.approach_planet = True
 
     def draw_player(self, scroll_x):
         player_sprite = pygame.image.load("assets/player_ship.png")
         player_sprite = pygame.transform.rotate(player_sprite, 90.0)
         player_sprite = pygame.transform.scale(player_sprite, (self.width, self.height))
-        self.move_player()
         window.blit(player_sprite, (self.x - scroll_x, self.y))
 
 class Planet(pygame.sprite.Sprite):
@@ -92,9 +102,6 @@ class Planet(pygame.sprite.Sprite):
         self.last_frame_time = pygame.time.get_ticks()
         self.animation_speed = 100
 
-        self.time_limit = 5000
-        self.start_time = None
-
         for i in range(50):
             frame = self.planet_sprite.subsurface((i * self.frame_width, 0, self.frame_width, self.frame_height))
             frame = pygame.transform.scale(frame, (self.width, self.height))
@@ -102,13 +109,6 @@ class Planet(pygame.sprite.Sprite):
 
     def update_planet(self):
         current_time = pygame.time.get_ticks()
-
-        if self.player.x_speed != 0 and self.start_time is None:
-            self.start_time = current_time
-
-        if self.start_time is not None:
-            if current_time - self.start_time >= self.time_limit and self.player.x_speed != 0:
-                self.x -= 2
 
         if current_time - self.last_frame_time >= self.animation_speed:
             self.current_frame = (self.current_frame + 1) % 50
@@ -130,7 +130,7 @@ class Asteroid(pygame.sprite.Sprite):
         self.player = player
         self.passed = False
 
-        self.ast_speed = 4
+        self.ast_speed = 6
         self.ast_sprite = pygame.image.load("assets/asteroid.png").convert_alpha()
         self.frame_width = 100
         self.frame_height = 100
@@ -210,6 +210,10 @@ def main(window):
                 run = False
                 break
 
+        player.move_player()
+        if not player.approach_planet:
+            scroll_x = max(0, player.x - 500)
+
         draw(window, background, scroll_x)
         player.draw_player(scroll_x)
         asteroid.draw_ast(scroll_x)
@@ -218,9 +222,6 @@ def main(window):
         planet.update_planet()
         asteroid.update_ast()
         pygame.display.update()
-
-        if player.x > 500:
-            scroll_x += player.x_speed
 
     pygame.quit()
     quit()
