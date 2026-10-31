@@ -235,7 +235,7 @@ class Info(pygame.sprite.Sprite):
     def __init__(self, info_text):
         super().__init__()
         self.char = 0
-        self.info_text = "Welcome to Scratch Wars Player..."
+        self.info_text = info_text
         self.last_typed = 0
 
     
@@ -251,10 +251,10 @@ class Info(pygame.sprite.Sprite):
                 self.last_typed = current_time
 
         info = font.render(self.info_text[:self.char], True, (0, 0, 0))
-        image = pygame.transform.scale(image, (666, 117))
+        image = pygame.transform.scale(image, (700, 117))
 
         window.blit(image, (150, 450))
-        window.blit(info, (160, 470))
+        window.blit(info, (165, 470))
 
 
 def make_background():
@@ -281,8 +281,9 @@ def draw(window, background, scroll_x):
 def main(window):
     clock = pygame.time.Clock()
     background = make_background()
-    show_info = True
+    space_pressed = 0
     last_ast = False
+    lvl = 1
     
     player = Player(70, 250, 50, 50, last_ast)
     
@@ -296,7 +297,17 @@ def main(window):
     asteroid8 = Asteroid(-100, 750, 1100, -350, 100, 100, player, 2000)
     planet = Planet(800, 200, 150, 150, player)
     enemyship1 = Enemyships(600, 700, 60, 60, 5, "enemyBlack1.png", player, 105)
-    info = Info("Welcome to Scratch Wars Player...")
+    info1 = Info("Welcome to Scratch Wars Player...")
+    info2 = Info("Let's understand the controls real quick.")
+    info3 = Info("Your Goal here is to reach the planet...")
+    info4 = Info("by dodging all the obsticles in your way.")
+    info5 = Info("Use W A S D to move and dodge obsticles.")
+    info6 = Info("There are two type of obsticles...")
+    info7 = Info("1. Enemy ships: These converge fast at...")
+    info8 = Info("your coords, move as quickly as you can.")
+    info9 = Info("2. Astreoids: These follow a straight...")
+    info10 = Info("trajectory, just don't be in it's way.")
+    info11= Info(f"Level {lvl} : Ridin Asteroids (and some ships)")
     scroll_x = 0
 
     run = True
@@ -309,9 +320,9 @@ def main(window):
                 break
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_SPACE:
-                    show_info = False
+                    space_pressed += 1
 
-        if not show_info:
+        if space_pressed > 10:
             player.move_player()
 
         if asteroid8.x != -100:
@@ -326,8 +337,29 @@ def main(window):
         draw(window, background, scroll_x)
         player.draw_player(scroll_x)
 
-        if show_info:
-            info.draw_info()
+        if space_pressed == 0:
+            info1.draw_info()
+        elif space_pressed == 1:
+            info2.draw_info()
+        elif space_pressed == 2:
+            info3.draw_info()
+        elif space_pressed == 3:
+            info4.draw_info()
+        elif space_pressed == 4:
+            info5.draw_info()
+        elif space_pressed == 5:
+            info6.draw_info()
+        elif space_pressed == 6:
+            info7.draw_info()
+        elif space_pressed == 7:
+            info8.draw_info()
+        elif space_pressed == 8:
+            info9.draw_info()
+        elif space_pressed == 9:
+            info10.draw_info()
+        elif space_pressed == 10:
+            info11.draw_info()
+
 
         if not (enemyship1.current_pos_x == enemyship1.x and enemyship1.current_pos_y == enemyship1.y):
             enemyship1.draw_eship()
