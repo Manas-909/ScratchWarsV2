@@ -74,7 +74,7 @@ class Player(pygame.sprite.Sprite):
         self.y = y
         self.width = width
         self.height = height
-        self.time_limit = 15000
+        self.time_limit = 10000
         self.start_time = None
         self.approach_planet = False
 
@@ -227,6 +227,31 @@ class Asteroid(pygame.sprite.Sprite):
     def draw_ast(self):
         window.blit(self.frames[self.current_frame], (self.x, self.y))
 
+class Info(pygame.sprite.Sprite):
+    def __init__(self, info_text):
+        super().__init__()
+        self.char = 0
+        self.info_text = "Welcome to Scratch Wars Player..."
+        self.last_typed = 0
+
+    
+    def draw_info(self):
+        image = pygame.image.load("assets/buttonRed.png").convert_alpha()
+        font = pygame.font.Font("assets/PressStart2P.ttf", 16)
+
+        current_time = pygame.time.get_ticks()
+
+        if self.char < len(self.info_text):
+            if current_time - self.last_typed > 50:
+                self.char += 1
+                self.last_typed = current_time
+
+        info = font.render(self.info_text[:self.char], True, (0, 0, 0))
+        image = pygame.transform.scale(image, (666, 117))
+
+        window.blit(image, (150, 450))
+        window.blit(info, (160, 470))
+
 
 def make_background():
     image = pygame.image.load("assets/space_background.png").convert()
@@ -235,6 +260,7 @@ def make_background():
     flipped_image = pygame.transform.flip(image, True, False)
 
     return image, flipped_image
+
 
 def draw(window, background, scroll_x):
     image, flipped_image = background
@@ -252,6 +278,8 @@ def main(window):
     clock = pygame.time.Clock()
     background = make_background()
     player = Player(70, 250, 50, 50)
+    show_info = True
+
     asteroid1 = Asteroid(800, -100, 0, 600, 100, 100, player, 500)
     asteroid2 = Asteroid(200, 680, 900, -100, 100, 100, player, 700)
     asteroid3 = Asteroid(-100, 500, 1200, -100, 100, 100, player, 1000)
@@ -262,7 +290,7 @@ def main(window):
     asteroid8 = Asteroid(-100, 750, 1100, -350, 100, 100, player, 2000)
     planet = Planet(800, 200, 150, 150, player)
     enemyship1 = Enemyships(600, 700, 60, 60, 5, "enemyBlack1.png", player, 105)
-    enemyship2 = Enemyships(600, -100, 60, 60, 5, "enemyBlack2.png", player, 1405)
+    info = Info("Welcome to Scratch Wars Player...")
     scroll_x = 0
 
     run = True
@@ -273,13 +301,15 @@ def main(window):
             if event.type == pygame.QUIT:
                 run = False
                 break
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_SPACE:
+                    show_info = False
 
-        player.move_player()
+        if not show_info:
+            player.move_player()
 
         if not (enemyship1.current_pos_x == enemyship1.x and enemyship1.current_pos_y == enemyship1.y):
             enemyship1.move_eship()
-        if not (enemyship2.current_pos_x == enemyship2.x and enemyship2.current_pos_y == enemyship2.y):
-            enemyship2.move_eship()
 
         if not player.approach_planet:
             scroll_x = max(0, player.x - 500)
@@ -287,10 +317,11 @@ def main(window):
         draw(window, background, scroll_x)
         player.draw_player(scroll_x)
 
+        if show_info:
+            info.draw_info()
+
         if not (enemyship1.current_pos_x == enemyship1.x and enemyship1.current_pos_y == enemyship1.y):
             enemyship1.draw_eship()
-        if not (enemyship2.current_pos_x == enemyship2.x and enemyship2.current_pos_y == enemyship2.y):
-            enemyship2.draw_eship()
         
         asteroid1.draw_ast()
         asteroid2.draw_ast()
@@ -301,7 +332,6 @@ def main(window):
         asteroid7.draw_ast()
         asteroid8.draw_ast()
         planet.draw_planet()
-        
 
         planet.update_planet()
         asteroid1.update_ast()
@@ -312,6 +342,7 @@ def main(window):
         asteroid6.update_ast()
         asteroid7.update_ast()
         asteroid8.update_ast()
+
         pygame.display.update()
 
     pygame.quit()
