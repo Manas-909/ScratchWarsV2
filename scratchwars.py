@@ -67,16 +67,17 @@ class Enemyships(pygame.sprite.Sprite):
 
 class Player(pygame.sprite.Sprite):
 
-    def __init__(self, x, y, width, height):
+    def __init__(self, x, y, width, height, last_ast):
         super().__init__()
         self.rect = pygame.Rect(x, y, width, height)
         self.x = x
         self.y = y
         self.width = width
         self.height = height
-        self.time_limit = 10000
+        self.time_limit = 3000
         self.start_time = None
         self.approach_planet = False
+        self.last_ast = last_ast
 
         self.x_speed = 0
         self.y_speed = 0
@@ -115,10 +116,11 @@ class Player(pygame.sprite.Sprite):
         self.y += self.y_speed
 
         self.rect.topleft = round(self.x), round(self.y)
+
         if self.x > 500: 
             current_time = pygame.time.get_ticks()
 
-            if self.x_speed != 0 and self.start_time is None:
+            if self.x_speed != 0 and self.start_time is None and self.last_ast:
                 self.start_time = current_time
             
             if self.start_time is not None:
@@ -127,9 +129,11 @@ class Player(pygame.sprite.Sprite):
 
     def draw_player(self, scroll_x):
         keys = pygame.key.get_pressed()
+
         player_sprite = pygame.image.load("assets/player_ship.png")
         player_sprite = pygame.transform.scale(player_sprite, (self.width, self.height))
         player_sprite = pygame.transform.rotate(player_sprite, 90.0)
+
         if keys[pygame.K_w]:
             player_sprite = pygame.transform.rotate(player_sprite, 90.0)
         elif keys[pygame.K_a]:
@@ -277,9 +281,11 @@ def draw(window, background, scroll_x):
 def main(window):
     clock = pygame.time.Clock()
     background = make_background()
-    player = Player(70, 250, 50, 50)
     show_info = True
-
+    last_ast = False
+    
+    player = Player(70, 250, 50, 50, last_ast)
+    
     asteroid1 = Asteroid(800, -100, 0, 600, 100, 100, player, 500)
     asteroid2 = Asteroid(200, 680, 900, -100, 100, 100, player, 700)
     asteroid3 = Asteroid(-100, 500, 1200, -100, 100, 100, player, 1000)
@@ -307,6 +313,9 @@ def main(window):
 
         if not show_info:
             player.move_player()
+
+        if asteroid8.x != -100:
+            player.last_ast = True
 
         if not (enemyship1.current_pos_x == enemyship1.x and enemyship1.current_pos_y == enemyship1.y):
             enemyship1.move_eship()
