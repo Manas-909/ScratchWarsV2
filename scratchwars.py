@@ -2,6 +2,7 @@ import pygame
 import os
 import random
 import math
+import sys
 from os.path import join
 pygame.init()
 
@@ -33,10 +34,6 @@ class Enemyships(pygame.sprite.Sprite):
         self.current_pos_y = 0
         self.current_pos_x = 0
 
-        self.eship_sound = pygame.mixer.Sound("assets/tie_fighter.mp3")
-        self.eship_sound.set_volume(0.7)
-        self.sound_played = False
-
     def move_eship(self):
         if self.player.x > self.trigger and self.passed < 2:
             self.passed += 1 
@@ -44,10 +41,6 @@ class Enemyships(pygame.sprite.Sprite):
         if self.passed == 1:
             self.current_pos_x = self.player.x
             self.current_pos_y = self.player.y
-
-            if not self.sound_played:
-                self.eship_sound.play()
-                self.sound_played = True
 
         if self.passed != 0:
             if self.current_pos_y - self.y < 0:
@@ -476,7 +469,7 @@ def main(window):
         main(window)
     else:
         pygame.quit()
-        quit()
+        sys.exit()
 
 if __name__ == "__main__":
     main(window)
