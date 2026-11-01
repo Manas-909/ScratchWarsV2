@@ -52,7 +52,9 @@ class Enemyships(pygame.sprite.Sprite):
                 self.last_vel = "d"
                 self.x += min(self.speed, abs(self.current_pos_x - self.x))
 
-    def draw_eship(self):
+        self.rect.topleft = round(self.x), round(self.y)
+
+    def draw_eship(self, scroll_x):
         Hship_sprite = pygame.image.load(join("assets", self.name))
         Hship_sprite = pygame.transform.scale(Hship_sprite, (self.width, self.height))
         Hship_sprite = pygame.transform.rotate(Hship_sprite, 90.0)
@@ -63,7 +65,7 @@ class Enemyships(pygame.sprite.Sprite):
         elif self.last_vel == "s":
             Hship_sprite = pygame.transform.rotate(Hship_sprite, -90.0)
 
-        window.blit(Hship_sprite, (self.x, self.y))
+        window.blit(Hship_sprite, (self.x - scroll_x, self.y))
 
 class Player(pygame.sprite.Sprite):
 
@@ -78,6 +80,7 @@ class Player(pygame.sprite.Sprite):
         self.start_time = None
         self.approach_planet = False
         self.last_ast = last_ast
+        self.lost_or_won = False
 
         self.x_speed = 0
         self.y_speed = 0
@@ -145,7 +148,7 @@ class Player(pygame.sprite.Sprite):
 
 class Planet(pygame.sprite.Sprite):
 
-    def __init__(self, x, y, width, height, player):
+    def __init__(self, x, y, width, height, player, result):
         super().__init__()
         self.rect = pygame.Rect(x, y, width, height)
         self.x = x
@@ -153,6 +156,7 @@ class Planet(pygame.sprite.Sprite):
         self.height = height
         self.width = width
         self.player = player
+        self.result = result
 
         self.planet_sprite = pygame.image.load("assets/planet.png").convert_alpha()
         self.frame_width = 100
@@ -171,12 +175,18 @@ class Planet(pygame.sprite.Sprite):
     def update_planet(self):
         current_time = pygame.time.get_ticks()
 
+        if not self.player.approach_planet and self.player.x > 500 and not (self.result.Lcollision or self.result.Wcollision):
+            if self.player.x_speed != 0:
+                self.x += self.player.x_speed
+
+        self.rect.topleft = round(self.x), round(self.y)
+
         if current_time - self.last_frame_time >= self.animation_speed:
             self.current_frame = (self.current_frame + 1) % 50
             self.last_frame_time = current_time
 
-    def draw_planet(self):
-        window.blit(self.frames[self.current_frame], (self.x, self.y))
+    def draw_planet(self, scroll_x):
+        window.blit(self.frames[self.current_frame], (self.x - scroll_x, self.y))
 
 class Asteroid(pygame.sprite.Sprite):
     def __init__(self, x, y, x2, y2, width, height, player, trigger_point):
@@ -228,8 +238,10 @@ class Asteroid(pygame.sprite.Sprite):
                 self.current_frame = (self.current_frame + 1) % 50
                 self.last_frame_time = current_time
 
-    def draw_ast(self):
-        window.blit(self.frames[self.current_frame], (self.x, self.y))
+        self.rect.topleft = round(self.x), round(self.y)
+
+    def draw_ast(self, scroll_x):
+        window.blit(self.frames[self.current_frame], (self.x - scroll_x, self.y))
 
 class Info(pygame.sprite.Sprite):
     def __init__(self, info_text):
@@ -242,6 +254,7 @@ class Info(pygame.sprite.Sprite):
     def draw_info(self):
         image = pygame.image.load("assets/buttonRed.png").convert_alpha()
         font = pygame.font.Font("assets/PressStart2P.ttf", 16)
+        font_small = pygame.font.SysFont("Arial", 15)
 
         current_time = pygame.time.get_ticks()
 
@@ -251,10 +264,12 @@ class Info(pygame.sprite.Sprite):
                 self.last_typed = current_time
 
         info = font.render(self.info_text[:self.char], True, (0, 0, 0))
+        info_small = font_small.render("Press space to continue", True, (0,0,0))
         image = pygame.transform.scale(image, (700, 117))
 
         window.blit(image, (150, 450))
         window.blit(info, (165, 470))
+        window.blit(info_small, (700, 535))
 
 
 def make_background():
@@ -278,9 +293,57 @@ def draw(window, background, scroll_x):
         elif i % 2 != 0:
             window.blit(flipped_image, (pos_x, 0))
 
+class Result():
+    def __init__(self):
+        self.Lcollision = False
+        self.Wcollision = False
+
+    def lose(self):
+        image = pygame.image.load("assets/button_depth.png").convert_alpha()
+        font = pygame.font.Font("assets/PressStart2P.ttf", 30)
+        font_small = pygame.font.SysFont("Arial", 15)
+        info_small = font_small.render("Press space to exit", True, (0,0,0))
+        info = font.render("You Lost", True, (0, 0, 0))
+        image = pygame.transform.scale(image, (256, 128))
+
+        window.blit(image, (350, 200))
+        window.blit(info, (360, 245))
+        window.blit(info_small, (425, 282))
+
+    def win(self):
+        image = pygame.image.load("assets/button_depth.png").convert_alpha()
+        font = pygame.font.Font("assets/PressStart2P.ttf", 30)
+        font_small = pygame.font.SysFont("Arial", 15)
+        info_small = font_small.render("Press space to exit", True, (0,0,0))
+        info = font.render("You Won", True, (0, 0, 0))
+        image = pygame.transform.scale(image, (256, 128))
+        
+        window.blit(image, (350, 200))
+        window.blit(info, (370, 245))
+        window.blit(info_small, (424, 280))
+
+    def check_collision(self, player, asteroids, enemyship1, planet):
+
+        for asteroid in asteroids:
+            if player.rect.colliderect(asteroid.rect):
+                self.Lcollision = True
+
+        if player.rect.colliderect(enemyship1.rect):
+            self.Lcollision = True
+
+        if player.rect.colliderect(planet.rect):
+            self.Wcollision = True
+
+        if self.Lcollision:
+            self.lose()
+        elif self.Wcollision:
+            self.win()
+
+
 def main(window):
     clock = pygame.time.Clock()
     background = make_background()
+    result = Result()
     space_pressed = 0
     last_ast = False
     lvl = 1
@@ -288,14 +351,14 @@ def main(window):
     player = Player(70, 250, 50, 50, last_ast)
     
     asteroid1 = Asteroid(800, -100, 0, 600, 100, 100, player, 500)
-    asteroid2 = Asteroid(200, 680, 900, -100, 100, 100, player, 700)
-    asteroid3 = Asteroid(-100, 500, 1200, -100, 100, 100, player, 1000)
-    asteroid4 = Asteroid(-100, 50, 1100, 50, 100, 100, player, 1500)
-    asteroid5 = Asteroid(-100, 250, 1100, 250, 100, 100, player, 1500)
-    asteroid6 = Asteroid(-100, 450, 1100, 450, 100, 100, player, 1500)
-    asteroid7 = Asteroid(-100, -100, 1100, 650, 100, 100, player, 2000)
-    asteroid8 = Asteroid(-100, 750, 1100, -350, 100, 100, player, 2000)
-    planet = Planet(800, 200, 150, 150, player)
+    asteroid2 = Asteroid(1000, 680, 900, -100, 100, 100, player, 700)
+    asteroid3 = Asteroid(1400, -100, 900, 700, 100, 100, player, 1000)
+    asteroid4 = Asteroid(2000, 50, 110, 50, 100, 100, player, 1500)
+    asteroid5 = Asteroid(2000, 280, 110, 280, 100, 100, player, 1500)
+    asteroid6 = Asteroid(2000, 500, 110, 500, 100, 100, player, 1500)
+    asteroid7 = Asteroid(1900, -100, 3000, 650, 100, 100, player, 2000)
+    asteroid8 = Asteroid(1850, 750, 3000, -350, 100, 100, player, 2000)
+    planet = Planet(800, 200, 150, 150, player, result)
     enemyship1 = Enemyships(600, 700, 60, 60, 5, "enemyBlack1.png", player, 105)
     info1 = Info("Welcome to Scratch Wars Player...")
     info2 = Info("Let's understand the controls real quick.")
@@ -308,6 +371,7 @@ def main(window):
     info9 = Info("2. Astreoids: These follow a straight...")
     info10 = Info("trajectory, just don't be in it's way.")
     info11= Info(f"Level {lvl} : Ridin Asteroids (and some ships)")
+    asteroids = [asteroid1, asteroid2, asteroid3, asteroid4, asteroid5, asteroid6, asteroid7, asteroid8]
     scroll_x = 0
 
     run = True
@@ -321,11 +385,15 @@ def main(window):
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_SPACE:
                     space_pressed += 1
-
-        if space_pressed > 10:
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_SPACE and (result.Lcollision or result.Wcollision):
+                    pygame.quit()
+                    quit()
+                    
+        if space_pressed > 10 and not (result.Lcollision or result.Wcollision):
             player.move_player()
 
-        if asteroid8.x != -100:
+        if asteroid8.x != 1850:
             player.last_ast = True
 
         if not (enemyship1.current_pos_x == enemyship1.x and enemyship1.current_pos_y == enemyship1.y):
@@ -360,19 +428,18 @@ def main(window):
         elif space_pressed == 10:
             info11.draw_info()
 
-
         if not (enemyship1.current_pos_x == enemyship1.x and enemyship1.current_pos_y == enemyship1.y):
-            enemyship1.draw_eship()
+            enemyship1.draw_eship(scroll_x)
         
-        asteroid1.draw_ast()
-        asteroid2.draw_ast()
-        asteroid3.draw_ast()
-        asteroid4.draw_ast()
-        asteroid5.draw_ast()
-        asteroid6.draw_ast()
-        asteroid7.draw_ast()
-        asteroid8.draw_ast()
-        planet.draw_planet()
+        asteroid1.draw_ast(scroll_x)
+        asteroid2.draw_ast(scroll_x)
+        asteroid3.draw_ast(scroll_x)
+        asteroid4.draw_ast(scroll_x)
+        asteroid5.draw_ast(scroll_x)
+        asteroid6.draw_ast(scroll_x)
+        asteroid7.draw_ast(scroll_x)
+        asteroid8.draw_ast(scroll_x)
+        planet.draw_planet(scroll_x)
 
         planet.update_planet()
         asteroid1.update_ast()
@@ -383,6 +450,8 @@ def main(window):
         asteroid6.update_ast()
         asteroid7.update_ast()
         asteroid8.update_ast()
+
+        result.check_collision(player, asteroids, enemyship1, planet)
 
         pygame.display.update()
 
