@@ -314,26 +314,26 @@ class Result():
     def lose(self):
         image = pygame.image.load("assets/button_depth.png").convert_alpha()
         font = pygame.font.Font("assets/PressStart2P.ttf", 30)
-        font_small = pygame.font.SysFont("Arial", 15)
-        info_small = font_small.render("Press space to exit", True, (0,0,0))
+        font_small = pygame.font.Font("assets/PressStart2P.ttf", 8)
+        info_small = font_small.render("R: Restart     SPACE: Exit", True, (0,0,0))
         info = font.render("You Lost", True, (0, 0, 0))
         image = pygame.transform.scale(image, (256, 128))
 
         window.blit(image, (350, 200))
         window.blit(info, (360, 245))
-        window.blit(info_small, (425, 282))
+        window.blit(info_small, (375, 290))
 
     def win(self):
         image = pygame.image.load("assets/button_depth.png").convert_alpha()
         font = pygame.font.Font("assets/PressStart2P.ttf", 30)
-        font_small = pygame.font.SysFont("Arial", 15)
-        info_small = font_small.render("Press space to exit", True, (0,0,0))
+        font_small = pygame.font.Font("assets/PressStart2P.ttf", 8)
+        info_small = font_small.render("R: Restart     SPACE: Exit", True, (0,0,0))
         info = font.render("You Won", True, (0, 0, 0))
         image = pygame.transform.scale(image, (256, 128))
         
         window.blit(image, (350, 200))
         window.blit(info, (370, 245))
-        window.blit(info_small, (424, 280))
+        window.blit(info_small, (375, 290))
 
     def check_collision(self, player, asteroids, enemyship1, planet):
 
@@ -388,6 +388,7 @@ def main(window):
     scroll_x = 0
 
     run = True
+    restart = False
     while run:
         clock.tick(FPS)
 
@@ -399,9 +400,12 @@ def main(window):
                 if event.key == pygame.K_SPACE:
                     space_pressed += 1
             if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_SPACE and (result.Lcollision or result.Wcollision):
-                    pygame.quit()
-                    quit()
+                if result.Lcollision or result.Wcollision:
+                    if event.key == pygame.K_SPACE:
+                        run = False
+                    elif event.key == pygame.K_r:
+                        restart = True
+                        run = False
                     
         if space_pressed > 10 and not (result.Lcollision or result.Wcollision):
             player.move_player()
@@ -468,8 +472,11 @@ def main(window):
 
         pygame.display.update()
 
-    pygame.quit()
-    quit()
+    if restart:
+        main(window)
+    else:
+        pygame.quit()
+        quit()
 
 if __name__ == "__main__":
     main(window)
