@@ -5,6 +5,10 @@ import math
 from os.path import join
 pygame.init()
 
+pygame.mixer.music.load("assets/background_music.mp3")
+pygame.mixer.music.set_volume(0.4)
+pygame.mixer.music.play(-1)
+
 pygame.display.set_caption("Scratch Wars")
 
 WIDTH, HEIGHT = 1000, 600
@@ -29,6 +33,10 @@ class Enemyships(pygame.sprite.Sprite):
         self.current_pos_y = 0
         self.current_pos_x = 0
 
+        self.eship_sound = pygame.mixer.Sound("assets/tie_fighter.mp3")
+        self.eship_sound.set_volume(0.7)
+        self.sound_played = False
+
     def move_eship(self):
         if self.player.x > self.trigger and self.passed < 2:
             self.passed += 1 
@@ -36,6 +44,10 @@ class Enemyships(pygame.sprite.Sprite):
         if self.passed == 1:
             self.current_pos_x = self.player.x
             self.current_pos_y = self.player.y
+
+            if not self.sound_played:
+                self.eship_sound.play()
+                self.sound_played = True
 
         if self.passed != 0:
             if self.current_pos_y - self.y < 0:
@@ -56,6 +68,7 @@ class Enemyships(pygame.sprite.Sprite):
 
     def draw_eship(self, scroll_x):
         Hship_sprite = pygame.image.load(join("assets", self.name))
+
         Hship_sprite = pygame.transform.scale(Hship_sprite, (self.width, self.height))
         Hship_sprite = pygame.transform.rotate(Hship_sprite, 90.0)
         if self.last_vel == "w":
